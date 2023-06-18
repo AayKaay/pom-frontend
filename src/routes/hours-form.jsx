@@ -1,14 +1,37 @@
 /* eslint-disable react/prop-types */
 import { useFormik } from "formik";
 import moment from "moment/moment";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as Yup from 'yup';
 
 export default function HoursForm() {
   const [employees, setEmployees] = useState(['Developer', 'Designer', 'Other']);
   const [projects, setProjects] = useState(['Developer', 'Designer', 'Other']);
 
+  useEffect(() => {
+    const fetchEmployees = fetch(`http://localhost:5206/employees`)
+      .then(response => response.json())
+      .then(data => data);
 
+    const fetchProjects = fetch('http://localhost:5206/projects')
+      .then(response => response.json())
+      .then(data => data);
+
+
+    Promise.all([fetchEmployees, fetchProjects])
+      .then(([employees, projects]) => {
+        // Handle the employees and projects data
+        console.log('Employees:', employees);
+        setEmployees(employees)
+        console.log('Projects:', projects);
+        setProjects(projects)
+      })
+      .catch(error => {
+        // Handle any errors
+        console.error('Error:', error);
+      });
+
+  }, [])
 
   const formik = useFormik({
     initialValues: {
@@ -19,8 +42,43 @@ export default function HoursForm() {
       workDescription: '',
     },
     onSubmit: function (values) {
-      alert(`You are registered! Name: ${values.name}. Email: ${values.email}. Profession: ${values.projects}. 
-        Age: ${values.age}`);
+      const currentDate = new Date().toISOString().split('T')[0];
+      const requestObject = {
+        "id": 0,
+        "employeeName": values.employees,
+        "projectName": values.projects,
+        "workDescription": values.workDescription,
+        startTime: new Date(`${currentDate}T${values.startTime}`).toISOString(),
+        endTime: new Date(`${currentDate}T${values.endTime}`).toISOString(),
+      };
+      console.log("🚀 ~ file: hours-form.jsx:49 ~ HoursForm ~ values:", values)
+
+      fetch("http://localhost:5206/add-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestObject),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Request failed");
+          }
+          return response.json();
+        })
+        .then(() => {
+          // Handle the response data
+          alert("data posted")
+        })
+        .catch((error) => {
+          // Handle any errors
+          console.error("Error:", error);
+        });
+
+
+
+
+
     },
     onChange: function (values) {
       console.log(values);
@@ -106,7 +164,9 @@ export default function HoursForm() {
         </div>
 
         <div className='text-center flex justify-around'>
-          <button className='bg-red-500 rounded p-3 text-white' type='reset'>Cancel</button>
+          <button className='bg-red-500 rounded p-3 text-white' onClick={()=>{
+            formik.resetForm()
+          }}>Cancel</button>
           <button className='bg-blue-500 rounded p-3 text-white' type='submit'>Submit</button>
         </div>
       </form>

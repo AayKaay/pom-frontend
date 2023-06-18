@@ -29,7 +29,7 @@ export default function Root() {
                     </ul>
                 </nav>
             </div>
-            <div className="w-9/12" id="detail">
+            <div className="w-full" id="detail">
                 <Outlet />
             </div>
         </div>
